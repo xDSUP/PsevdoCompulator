@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace lab1
 {
-    class Analizator
+    class LexicalAnalizator
     {
         /// <summary>
         /// . Входной язык содержит операторы условия if … then … else и if … then,
@@ -17,16 +17,17 @@ namespace lab1
         /// </summary>
         String allTextProgram; // анализируемый текст
         public List<Lexeme> tableID { get; } // таблица идентификаторов(никаких повторов)
+        public IdHashTable<Lexeme> idHashTable;
         public List<Lexeme> tableLexemes { get; } // таблица лексем(могут быть повторы)
         private string temp; // для грамо
 
-
+        static String operators = "=-+/*^<>";
         static String limiters = "():;={}<>+- \n/*^";
         static String[] reservedWords = { "if", "then", "else" };
 
 
         // при создании удаляет все пробелы из текста
-        public Analizator(string text)
+        public LexicalAnalizator(string text)
         {
             // убираем все двойные пробелы
             while(text.Contains("  "))
@@ -35,6 +36,7 @@ namespace lab1
             this.allTextProgram = text;
             tableID = new List<Lexeme>();
             tableLexemes = new List<Lexeme>();
+            idHashTable = new IdHashTable<Lexeme>();
         }
 
 
@@ -89,6 +91,7 @@ namespace lab1
                         result(new Lexeme(temp, tempType));
                     // обнулим темп
                     temp = ch.ToString();
+                    tempType = Lexeme.LexemType.LIMITERS;
                     if (ch==' ' || ch=='\n')
                     {
                         temp = "";
@@ -101,14 +104,32 @@ namespace lab1
                         {
                             temp += allTextProgram[i + 1].ToString();
                             //result(new Lexeme(temp, Lexeme.LexemType.LIMITERS));
-                            i+=2;
+                            // переставим указатель дальше за равно
+                            tempType = Lexeme.LexemType.OPERATOR;
+                            i+=1;
                         }
                         else
                         {
                             //TODO: сообщение об ошибке
                         }
-                    }      
-                    result(new Lexeme(temp, Lexeme.LexemType.LIMITERS));
+                    }
+
+                    // если это знак операции
+                    if (operators.Contains(ch.ToString()))
+                    {
+                        tempType = Lexeme.LexemType.OPERATOR;
+                    }
+                    // TODO: обрабатывать области видимости
+                    // открытие новой области видимости
+                    //if( ch == '{')
+                    //{
+                    //    idHashTable.initializeScope();
+                    //}
+                    //if (ch == '}')
+                    //{
+                    //    idHashTable.finalizeScope();
+                    //}
+                    result(new Lexeme(temp, tempType));
                     temp = "";
                 }
             }
@@ -135,8 +156,16 @@ namespace lab1
                 {
                     tableID.Add(lexeme);
                 }
+                if (lexeme.type == Lexeme.LexemType.ID)
+                { 
+                    // TODO: обработка вложенности
+                    // если еще не был добавлен в таблицу, тогда добавим
+                    if(idHashTable.lookUp(lexeme) == null)
+                    {
+                        idHashTable.insert(lexeme);
+                    }
+                }
             }
-                
             tableLexemes.Add(lexeme);
         }
 

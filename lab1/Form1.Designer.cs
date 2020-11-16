@@ -41,16 +41,19 @@
             this.tabPageCode = new System.Windows.Forms.TabPage();
             this.tabPageId = new System.Windows.Forms.TabPage();
             this.tabPageLexeme = new System.Windows.Forms.TabPage();
+            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.tableLexeme = new System.Windows.Forms.ListView();
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.treeView1 = new System.Windows.Forms.TreeView();
             this.tabControl1.SuspendLayout();
             this.tabPageCode.SuspendLayout();
             this.tabPageId.SuspendLayout();
             this.tabPageLexeme.SuspendLayout();
             this.flowLayoutPanel1.SuspendLayout();
+            this.tabPage1.SuspendLayout();
             this.SuspendLayout();
             // 
             // AnalizTextBox
@@ -60,8 +63,8 @@
             this.AnalizTextBox.Name = "AnalizTextBox";
             this.AnalizTextBox.Size = new System.Drawing.Size(450, 177);
             this.AnalizTextBox.TabIndex = 0;
-            this.AnalizTextBox.Text = "z := 2*y^2+ x^3 - 2\r\nif z=2 then{\r\n x = 5;\r\n y = 2;\r\n}\r\nelse{\r\n x = 2;\r\n y = 5;\r\n" +
-    "}\r\n";
+            this.AnalizTextBox.Text = "x:=3; \r\ny:=2;\r\nt:=23;\r\nz := 2*y^2+ x^3 - 2;\r\nif z>21 then{\r\n x:= 5;\r\n y:= 2;\r\n}\r\n" +
+    "else{\r\n x := 2;\r\n y := 5;\r\n}\r\n";
             this.AnalizTextBox.TextChanged += new System.EventHandler(this.AnalizTextBox_TextChanged);
             // 
             // ResultTextBox
@@ -92,6 +95,7 @@
             this.Table.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Table.FullRowSelect = true;
             this.Table.GridLines = true;
+            this.Table.HideSelection = false;
             this.Table.Location = new System.Drawing.Point(3, 3);
             this.Table.Name = "Table";
             this.Table.Size = new System.Drawing.Size(474, 338);
@@ -117,6 +121,7 @@
             // 
             this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1});
+            this.listView1.HideSelection = false;
             this.listView1.Location = new System.Drawing.Point(8, 218);
             this.listView1.Name = "listView1";
             this.listView1.Size = new System.Drawing.Size(450, 101);
@@ -134,6 +139,7 @@
             this.tabControl1.Controls.Add(this.tabPageCode);
             this.tabControl1.Controls.Add(this.tabPageId);
             this.tabControl1.Controls.Add(this.tabPageLexeme);
+            this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
@@ -176,6 +182,16 @@
             this.tabPageLexeme.Text = "Таблица лексем";
             this.tabPageLexeme.UseVisualStyleBackColor = true;
             // 
+            // flowLayoutPanel1
+            // 
+            this.flowLayoutPanel1.Controls.Add(this.ResultTextBox);
+            this.flowLayoutPanel1.Controls.Add(this.tableLexeme);
+            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 3);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(474, 338);
+            this.flowLayoutPanel1.TabIndex = 5;
+            // 
             // tableLexeme
             // 
             this.tableLexeme.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
@@ -184,6 +200,7 @@
             this.columnHeader4});
             this.tableLexeme.FullRowSelect = true;
             this.tableLexeme.GridLines = true;
+            this.tableLexeme.HideSelection = false;
             this.tableLexeme.Location = new System.Drawing.Point(3, 29);
             this.tableLexeme.Name = "tableLexeme";
             this.tableLexeme.Size = new System.Drawing.Size(466, 304);
@@ -206,15 +223,24 @@
             this.columnHeader4.Text = "Информация";
             this.columnHeader4.Width = 192;
             // 
-            // flowLayoutPanel1
+            // tabPage1
             // 
-            this.flowLayoutPanel1.Controls.Add(this.ResultTextBox);
-            this.flowLayoutPanel1.Controls.Add(this.tableLexeme);
-            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 3);
-            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(474, 338);
-            this.flowLayoutPanel1.TabIndex = 5;
+            this.tabPage1.Controls.Add(this.treeView1);
+            this.tabPage1.Location = new System.Drawing.Point(4, 22);
+            this.tabPage1.Name = "tabPage1";
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage1.Size = new System.Drawing.Size(480, 344);
+            this.tabPage1.TabIndex = 3;
+            this.tabPage1.Text = "Дерево разбора";
+            this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // treeView1
+            // 
+            this.treeView1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.treeView1.Location = new System.Drawing.Point(3, 3);
+            this.treeView1.Name = "treeView1";
+            this.treeView1.Size = new System.Drawing.Size(474, 338);
+            this.treeView1.TabIndex = 0;
             // 
             // Form1
             // 
@@ -231,6 +257,7 @@
             this.tabPageLexeme.ResumeLayout(false);
             this.flowLayoutPanel1.ResumeLayout(false);
             this.flowLayoutPanel1.PerformLayout();
+            this.tabPage1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -255,6 +282,8 @@
         private System.Windows.Forms.ColumnHeader columnHeader3;
         private System.Windows.Forms.ColumnHeader columnHeader4;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
+        private System.Windows.Forms.TabPage tabPage1;
+        private System.Windows.Forms.TreeView treeView1;
     }
 }
 

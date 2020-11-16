@@ -8,30 +8,44 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
+using lab1.Syntax;
 
 namespace lab1
 {
   
     public partial class Form1 : Form
     {
+        LexicalAnalizator analizator;
+        SyntacticAnalizator syntacticAnalizator;
         public Form1()
         {
             InitializeComponent();
         }
 
-        void updateTableId(List<Lexeme> lexemes)
+        // void updateTableId(List<Lexeme> lexemes)
+        void updateTableId(IdHashTable<Lexeme> idHashTable)
         {
             int newId = 0;
             Table.Items.Clear();
-            foreach(Lexeme lexeme in lexemes)
+            var stack = idHashTable.Elems;
+            foreach ( var id in stack)
             {
                 ListViewItem item = new ListViewItem();
-                item.Tag = lexeme;
-                item.Text = newId++.ToString();
-                item.SubItems.Add(lexeme.Text);
-                item.SubItems.Add(lexeme.type.ToString());
-                Table.Items.Add(item);
+                item.Tag = id;
+                item.Text = 1.ToString();
+                item.SubItems.Add(id.Lexeme.Text);
+                Table.Items.Add(item);   
             }
+
+            //foreach(Lexeme lexeme in lexemes)
+            //{
+            //    ListViewItem item = new ListViewItem();
+            //    item.Tag = lexeme;
+            //    item.Text = newId++.ToString();
+            //    item.SubItems.Add(lexeme.Text);
+            //    item.SubItems.Add(lexeme.type.ToString());
+            //    Table.Items.Add(item);
+            //}
         }
 
         void updateTableLexeme(List<Lexeme> lexemes, List<Lexeme>ids)
@@ -57,19 +71,43 @@ namespace lab1
             }
         }
 
-        void updateTables(Analizator analizator)
+        void updateTables(LexicalAnalizator analizator)
         {
-            updateTableId(analizator.tableID);
+            updateTableId(analizator.idHashTable);
             updateTableLexeme(analizator.tableLexemes, analizator.tableID);
         }
 
         private void AnalBut_Click(object sender, EventArgs e)
         {
-            Analizator analizator = new Analizator(AnalizTextBox.Text);
+            LexicalAnalizator analizator = new LexicalAnalizator(AnalizTextBox.Text);
             if (analizator.analysis()) // анализ успешно завершен
             {
                 ResultTextBox.Text = analizator.ToString();
+                this.analizator = analizator;
                 updateTables(analizator);
+            }
+            syntacticAnalizator = new SyntacticAnalizator(analizator.tableLexemes);
+            try
+            {
+                syntacticAnalizator.work();
+                UpdateTreeView(syntacticAnalizator.listExpression);
+            }
+            catch (lab1.Exceptions.SyntaxException exp)
+            {
+                MessageBox.Show(exp.Message);
+            }
+  
+        }
+        
+        private void UpdateTreeView(List<Expression> expressions)
+        {
+            treeView1.Nodes.Clear();
+            foreach(var expression in expressions)
+            {
+                var node = new TreeNode();
+                node.Tag = expression;
+                node.Text = expression.ToString();
+                treeView1.Nodes.Add(node);
             }
         }
 
