@@ -44,8 +44,11 @@ namespace lab1
             listsExpressions.Push(listExpression); // самый главный лист всегда в стеке!!!
             // для хранения родителей при погружении в скобочки и if'ы
             Stack<Expression> stackExpression = new Stack<Expression>(); 
+            // предыдущая лексема
             Lexeme tempLexeme;
+            // хранит текущую ветку выражения
             Expression currentExpression = null;
+            // хранит полное выражение
             Expression tempExpression = null;
             
             // выполняется проход по каждой лексеме для составления дерева разбора
@@ -58,11 +61,14 @@ namespace lab1
                     currentExpression = tempExpression;
                 }
 
-                if (currentLexeme.type == Lexeme.LexemType.CONSTANT ||
-                    currentLexeme.type == Lexeme.LexemType.ID ||
-                    currentLexeme.type == Lexeme.LexemType.CONSTANT_DOUBLE)
+                if (currentLexeme.isConst())
                 {
-                    if(currentExpression.Left is null)
+                    // если есть опер и нет правого, добавим правый, это для унарного минуса
+                    if(currentExpression.Oper is not null && currentExpression.Right is null)
+                    {
+                        currentExpression.Right = currentLexeme;
+                    }
+                    else if(currentExpression.Left is null)
                     {
                         currentExpression.Left = currentLexeme;
                     }                    
@@ -80,19 +86,28 @@ namespace lab1
                 {
                     switch (currentLexeme.Text)
                     {
-                        case "{": // значит начинается новый блок кода
+                        case "{": // значит начинается новый блок кода в ифах
                             _limitersCounter++;
-                            if (!currentExpression.isNull())
+                            if (!currentExpression.isNull()) // текущее должно быть пустым
                             {
                                 throw new SyntaxException("Обнаруженно незаконченное выражение: " + tempExpression.ToString());
                             }
+                            else if (stackExpression.Count == 0 || (stackExpression.Peek().state != State.IFTHEN && stackExpression.Peek().state != State.IFTHENELSE))
+                            {
+                                // если скобочка встретилась не после выражения ифа, значит плохо
+                                throw new SyntaxException("Фигурная скобка в недопустимом месте " + tempExpression);
+                            }
                             else
                             {
+                                // теперь это выражение со скобками
+                                currentExpression.state = State.ISBRAKETS;
                                 currentExpression.Left = currentLexeme;
-                                var temp = new Expression();
-                                stackExpression.Push(currentExpression);
-                                tempExpression = temp;
-                                currentExpression = temp;
+                                stackExpression.Push(currentExpression); // чтобы вернуться к выражению со скобкой
+
+                                var tempE = new Expression(); // для записи выражений внутри скобок
+                                tempExpression = tempE;
+                                currentExpression = tempE;
+                                // выражения по ; будут записываться в лист, пока не встретим } , а потом вернемся к обычному листу(см ниже)
                                 listsExpressions.Push(new List<Expression>());
                             }
                             break;
@@ -100,54 +115,74 @@ namespace lab1
                             _limitersCounter--;
                             if (_limitersCounter < 0)
                             {
-                                throw new SyntaxException("Есть лишние закрывающие скобочки");
+                                throw new SyntaxException("Есть лишние закрывающие скобочки " + tempExpression);
                             }
+                            else if (stackExpression.Count == 0)
+                            {
+                                // не может быть пустым стек при скобочку, значит что-то не так
+                                throw new SyntaxException("Есть лишние закрывающие скобочки " + tempExpression);
+                            }
+                            // получаем выражение со скобочками
                             currentExpression = stackExpression.Pop();
-                            if (currentExpression.Right is null)
+                            if (currentExpression.state != State.ISBRAKETS)
+                                throw new SyntaxException("Есть лишние закрывающие скобочки " + tempExpression);
+
+                            if (currentExpression.Right is null) // правого не должно быть
                             {
                                 currentExpression.Right = currentLexeme;
                             }
-                            currentExpression.Oper = listsExpressions.Pop();
+                            // подставим ближайший лист выражений в наши скобки
+                            var tempList = listsExpressions.Pop();
+                            // если выражение одно, то запишем его без листа
+                            if (tempList.Count == 0)
+                                throw new SyntaxException("Внутри скобок нет выражений" + tempExpression);
+                            currentExpression.Oper = tempList.Count == 1 ? (object)tempList[0] : (object)tempList;
+                            // достаем выражение ифа
                             currentExpression = stackExpression.Pop();
+                            // устанавливаем его текущим
                             tempExpression = currentExpression;
                             break;
                         case "(":
-                            _limitersCounter+= 2;
-                            if (tempExpression.isNull())
+                            _limitersCounter += 2;
+
+                            var temp = new Expression();
+                            // сохраним вложенность правильно
+                            stackExpression.Push(tempExpression); // полное выражение где встретились скобочки
+                            stackExpression.Push(currentExpression); // выражение, где непосредств встретились скобочки
+                                                                     // для случаев сразу скобок в скобках
+                            if (currentExpression.isNull())
                             {
-                                throw new SyntaxException("Скобка в пустом выражении" + tempExpression.ToString());
+                                // теперь слева будет выражение в скобочках
+                                currentExpression.Left = new Expression() { Left = currentLexeme, Oper = temp, state = State.ISBRACES };
+                                // помещаем в стек выражение со скобками
+                                stackExpression.Push((Expression)currentExpression.Left);
+                                // для этого случая ссылка на выраж со скобкой уже в стеке
+                            }
+                            // если в текущем выражении еще нет операции и есть что-то слева
+                            else if (currentExpression.Oper == null)
+                            {
+                                throw new SyntaxException("Перед скобочкой нет операции " + tempExpression);
+                            }
+                            else if (currentExpression.Left is not null && currentExpression.Oper is not null)
+                            {
+                                // теперь справа будет выражение в скобочках
+                                currentExpression.Right = new Expression() { Left = currentLexeme, Oper = temp, state = State.ISBRACES };
+                                // помещаем в стек выражение со скобками
+                                stackExpression.Push((Expression)currentExpression.Right);
                             }
                             else
                             {
-                                var temp = new Expression();
-                                // если слева пустое место
-                                if (currentExpression.Left == null)
-                                {
-                                    // вроде не долнжо сюда заходить
-                                    currentExpression.Left = currentLexeme;
-                                    throw new SyntaxException("Скобочка слева!!! " + tempExpression);
-                                }
-                                else // что-то есть
-                                {
-                                    if (currentExpression.Oper == null)
-                                        throw new SyntaxException("Перед скобочкой нет операции " + tempExpression);
-                                    // сохраним вложенность правильно
-                                    stackExpression.Push(tempExpression);
-                                    stackExpression.Push(currentExpression); 
-                                    
-                                    // теперь справа будет выражение в скобочках
-                                    currentExpression.Right = new Expression() { Left = currentLexeme, Oper = temp };
-                                    
-                                    stackExpression.Push((Expression)currentExpression.Right);
-                                    // погружаемся внутрь этих скобочек
-                                    tempExpression = temp;
-                                    currentExpression = temp;
-                                    listsExpressions.Push(new List<Expression>());
-                                }
+                                throw new SyntaxException("Не понимаю, как толковать " + tempExpression);
                             }
+                            // погружаемся внутрь этих скобочек
+                            tempExpression = temp;
+                            currentExpression = temp;
+                            // в скобках не будет ;, а значит лист излишен
+                            //listsExpressions.Push(new List<Expression>());
+
                             break;
                         case ")":
-                            _limitersCounter-= 2;
+                            _limitersCounter -= 2;
                             if (_limitersCounter < 0)
                             {
                                 throw new SyntaxException("Есть лишние закрывающие скобочки");
@@ -156,37 +191,29 @@ namespace lab1
                             var tempExpr = currentExpression;
                             // получаем выражение со скобочками
                             currentExpression = stackExpression.Pop();
-                            if (currentExpression.Right is null) 
-                            {
-                                currentExpression.Right = currentLexeme;
-                            }
-                            // получаем список выражений, которые фиксировались до этой скобочки
+                            if (currentExpression.state != State.ISBRACES)
+                                throw new SyntaxException("Скобка закрывает что-то не то " + tempExpression);
 
-                            var listExpr = listsExpressions.Pop();
-                            if (listExpr.Count >= 1)
+                            currentExpression.Right = currentLexeme;// ставим скобку на место
+                            // проверим выражение внутри скобочек на правильность(для кажного элемента)
+                            if (tempExpr.Left is Lexeme && tempExpr.Oper is null && tempExpr.Right is null) // небольшое сокращение
                             {
-                                currentExpression.Oper = listExpr;
+                                currentExpression.Oper = tempExpr.Left;
                             }
                             else
                             {
-                                // проверим выражение внутри скобочек на правильность(для ожного элемента)
-                                if(tempExpr.Left is Lexeme && tempExpr.Oper is null && tempExpr.Right is null )
-                                    currentExpression.Oper = tempExpr.Left;
+                                if (!tempExpression.isTrue()) // проверка выражения в скобках
+                                {
+                                    throw new SyntaxException("Неправильное выражение в скобках " + tempExpression);
+                                }
                                 else
                                 {
-                                    if (!tempExpr.isTrue())
-                                    {
-                                        throw new SyntaxException("Неправильное выражение в скобках " + tempExpr);
-                                    }
-                                    else
-                                    {
-                                        currentExpression.Oper = tempExpr;
-                                    }
+                                    currentExpression.Oper = tempExpression;
                                 }
                             }
-                                
+
                             //else этот случай уже обработан изначально
-                                //currentExpression.Oper = null;
+                            //currentExpression.Oper = null;
                             // вернем контекст, который был до скобочек
                             currentExpression = stackExpression.Pop();
                             tempExpression = stackExpression.Pop();
@@ -203,7 +230,7 @@ namespace lab1
                             {
                                 throw new SyntaxException(exp.Message + "\nОшибка в выражении " + tempExpression);
                             }
-                            
+
                             listsExpressions.Peek().Add(tempExpression);
                             tempExpression = null; // всё оки
                             break;
@@ -229,33 +256,46 @@ namespace lab1
                 {
                     if (currentLexeme.Text == "if")
                     {
+                        // до ифа ничего не законченнго не может быть!
                         if (!currentExpression.isNull())
                         {
                             throw new SyntaxException("Обнаруженно незаконченное выражение: " + tempExpression.ToString());
                         }
                         else
                         {
+                            currentExpression.state = State.IF;
                             var temp = new Expression();
                             currentExpression.Left = temp;
-                            stackExpression.Push(currentExpression); // погрузимся на уровень вниз для выражения там
+                            stackExpression.Push(currentExpression); // сохраним ссылку на выражение ифа
+                            // погрузимся на уровень вниз для записи условия в левый узел выражения ифа
                             currentExpression = temp;
                         }
                     }
                     if (currentLexeme.Text == "then")
                     {
-                        // значит раньше было вложенное условие и теперь пора подниматься на уровень с ифом
+                        // значит раньше было вложенное условие и теперь пора подниматься на уровень выражения с ифом
                         currentExpression = stackExpression.Peek();
+                        if (currentExpression.state != State.IF)
+                            throw new SyntaxException("then не внутри конструкции ifthen " + currentExpression);
+                        // логическое выражение уже записано для ифа
                         currentExpression.state = State.IFTHEN;
                         var temp = new Expression();
+                        // теперь спускаемся для записи выражений внутри then
                         currentExpression.Oper = temp;
                         currentExpression = temp;
+                        tempExpression = currentExpression;
                     }
                     if (currentLexeme.Text == "else")
                     {
+                        // после then была {} и мы поднялись на уровень с ифом
+                        // значит раньше был then
+                        if(currentExpression.state != State.IFTHEN)
+                            throw new SyntaxException("else не внутри конструкции ifthenelse " + currentExpression);
                         currentExpression.state = State.IFTHENELSE;
-                        stackExpression.Push(currentExpression);
+                        stackExpression.Push(currentExpression); // записываем в стек, чтобы вернуться к выражению ифа
                         var temp = new Expression();
                         currentExpression.Right = temp;
+                        // опускаемся для записи выражений в else
                         currentExpression = temp;
                     }
                 }

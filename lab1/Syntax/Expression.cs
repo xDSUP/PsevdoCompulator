@@ -8,12 +8,22 @@ using System.Windows.Forms;
 
 namespace lab1.Syntax
 {
+    /// <summary>
+    /// интерфейс правила с единственным методом
+    /// который проверяет выражение на соответствие правилу
+    /// </summary>
+    public interface IRule
+    {
+        bool accept(Expression exp);
+    }
+
     public enum State
     {
         NOT_OPERATOR,
         NOT_RIGHT,
         NOT_LEFT,
         OK,
+        IF,
         IFTHEN,
         IFTHENELSE,
         ISBRACES, // фигурные скобочки {}
@@ -26,12 +36,12 @@ namespace lab1.Syntax
     /// конструкция ifthenelse левая и средняя аналогично ifthen, а правое - выражение else
     /// важное условие для граматики! : выражения после then and else всегда в {}!
     /// </summary>
-    class Expression
+    public class Expression
     {
-        private object left;
-        private object oper;
-        private object right;
-        public State state;
+        private object left; // левая часть выражения
+        private object oper; // оператор либо средняя часть выражения
+        private object right; // правая часть выражения 
+        public State state; // состояние выражения
         // флаг проверено или нет, чтобы два раза не проверять при вложенности
         private bool isChecked = false; 
 
@@ -59,6 +69,9 @@ namespace lab1.Syntax
             }
         }
 
+        // подошедшее правило
+        private Func<Expression, bool> trueRule;
+
         public Expression()
         {
              state = State.NOT_RIGHT;
@@ -78,10 +91,55 @@ namespace lab1.Syntax
             state = State.OK;
         }
 
+        #region Проверки на лексемы и выражения
+        private bool _lIsLex() => left is Lexeme;
+        private bool _rIsLex() => right is Lexeme;
+        private bool _oIsLex() => oper is Lexeme;
+        private bool _lIsExp() => left is Expression;
+        private bool _rIsExp() => right is Expression;
+        private bool _oIsExp() => oper is Expression;
+        private bool _lIsLexORExp() => _lIsExp() || _lIsLex();
+        private bool _rIsLexORExp() => _rIsExp() || _rIsLex();
+        private bool _oIsLexORExp() => _oIsExp() || _oIsLex();
+        private bool _lStateIs(State st) => ((Expression)left).isTrue() && ((Expression)left).state==st;
+        private bool _rStateIs(State st) => ((Expression)right).isTrue() && ((Expression)right).state == st;
+        private bool _oStateIs(State st) => ((Expression)oper).isTrue() && ((Expression)oper).state == st;
+        #endregion
+
+        #region Сборник правил
+        Func<Expression, bool>[] rules =
+        {
+             // проверка обычной арифметической операции
+             (e) => e._lIsLexORExp() && e._oIsLex() && e._rIsLexORExp(),
+             // проверка выражения скобочек для ифа
+             (e) => e._lIsLex() && e.left.ToString()=="{" && e._oIsLexORExp() 
+             && e._rIsLexORExp() && e.left.ToString()=="}",
+             // проверка выражения скобочек
+             (e) => e._lIsLex() && e.left.ToString()=="(" && e._oIsLexORExp() 
+             && e._rIsLexORExp() && e.left.ToString()==")",
+             // проверка ифа
+             (e) => e._lIsExp() && e._oIsExp()
+        };
+        //IRule[] rules =
+        #endregion
+
         public bool isTrue()
         {
             if (isChecked)
                 return true;
+            // пройдем по всем правилам, если хоть одно подойдет
+            // все оки, иначе это ошибка
+            //foreach (var rule in rules)
+            //{
+            //    if (rule.Invoke(this))
+            //    {
+            //        trueRule = rule;
+            //        isChecked = true;
+            //        return true;
+            //    }
+            //}
+            //return false;
+
             // проверка левого и правого операнда, если там скобочки, отметит соотв-щим образом флагами 
             // ISDRACES b ISBRAKETS соответственно 
             if (!CheckOperand(Left))
@@ -184,7 +242,11 @@ namespace lab1.Syntax
 
         public override string ToString()
         {
-            return $"{left?.ToString()} {oper?.ToString()} {right?.ToString()}";
+            String operStr = oper is List<Expression> 
+                ? String.Join(
+                    "; ", ((List<Expression>)oper).ConvertAll(new Converter<Expression, String>(x=>x.ToString()))) 
+                : oper?.ToString();
+            return $"{left?.ToString()} {operStr?.ToString()} {right?.ToString()}";
         }
     }
 }

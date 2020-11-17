@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace lab1
 {
-    class Lexeme : IHastable
+    public class Lexeme : IHastable
     {
         public enum LexemType
         {

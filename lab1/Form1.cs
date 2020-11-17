@@ -104,11 +104,43 @@ namespace lab1
             treeView1.Nodes.Clear();
             foreach(var expression in expressions)
             {
-                var node = new TreeNode();
-                node.Tag = expression;
-                node.Text = expression.ToString();
-                treeView1.Nodes.Add(node);
+                treeView1.Nodes.Add(getTreeNode(expression));
             }
+        }
+
+        private TreeNode getTreeNode(Object obj)
+        {
+            TreeNode temp = new TreeNode();
+            if(obj is null)
+            {
+                temp.Text = "NULL";
+            }
+            else if (obj is Lexeme)
+            {
+                Lexeme lexeme = obj as Lexeme;
+                temp.Tag = lexeme;
+                temp.Text = lexeme.Text;
+            }
+            else if (obj is Expression)
+            {
+                Expression exp = obj as Expression;
+                temp.Tag = exp;
+                temp.Text = exp.ToString();
+                temp.Nodes.Add(getTreeNode(exp.Left));
+                temp.Nodes.Add(getTreeNode(exp.Oper));
+                temp.Nodes.Add(getTreeNode(exp.Right));
+            }
+            else
+            {
+                // лист
+                List<Expression> list = obj as List<Expression>;
+                temp.Text = obj.ToString();
+                foreach (var item in list)
+                {
+                    temp.Nodes.Add(getTreeNode(item));
+                }
+            }
+            return temp;
         }
 
         private void AnalizTextBox_TextChanged(object sender, EventArgs e)
