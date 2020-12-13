@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace lab1.Hashtable
 {
-    interface IHastable
+    public interface IHastable
     {
         // возвращает хеш
         int GetHashCode();

@@ -19,9 +19,12 @@ namespace lab1.Syntax
 
     public enum State
     {
-        NOT_OPERATOR,
-        NOT_RIGHT,
-        NOT_LEFT,
+        OPER_PLUS,
+        OPER_MINUS,
+        OPER_DIV,
+        OPER_MPY,   // оператор умножения
+        OPER_IF,    // логический оператор
+        OPER_LOAD,  // оператор присвоения
         OK,
         IF,
         IFTHEN,
@@ -74,22 +77,22 @@ namespace lab1.Syntax
 
         public Expression()
         {
-             state = State.NOT_RIGHT;
         }
 
         public Expression(object obj)
         {
             Left = obj;
-            state = State.NOT_OPERATOR;
         }
 
-        public Expression(object left, Lexeme oper, object right)
+        public Expression(object left, object oper, object right)
         {
             this.Left = left;
             this.Oper = oper;
             this.Right = right;
-            state = State.OK;
         }
+
+        public Expression getLeftAsExpr() => left as Expression;
+        public Expression getRightAsExpr() => right as Expression;
 
         #region Проверки на лексемы и выражения
         private bool _lIsLex() => left is Lexeme;
@@ -179,6 +182,35 @@ namespace lab1.Syntax
         }
 
         /// <summary>
+        ///  Вернет нужое состояние для лексемы
+        /// </summary>
+        /// <param name="lex"></param>
+        /// <returns></returns>
+        public static State getStateOperator(Lexeme lex)
+        {
+            if(lex.type == Lexeme.LexemType.OPERATOR)
+            {
+                switch (lex.Text)
+                {
+                    case "+":
+                        return State.OPER_PLUS;
+                    case "-":
+                        return State.OPER_MINUS;
+                    case "*":
+                        return State.OPER_MPY;
+                    case "/":
+                        return State.OPER_DIV;
+                    case ":=":
+                        return State.OPER_LOAD;
+                    case "=":
+                    case "<":
+                    case ">":
+                        return State.OPER_IF;
+                }
+            }
+            throw new ArgumentException("Не кидай сюда не операторы!");
+        }
+        /// <summary>
         ///  вернет пустой или нет
         /// </summary>
         /// <returns></returns>
@@ -246,7 +278,7 @@ namespace lab1.Syntax
                 ? String.Join(
                     "; ", ((List<Expression>)oper).ConvertAll(new Converter<Expression, String>(x=>x.ToString()))) 
                 : oper?.ToString();
-            return $"{left?.ToString()} {operStr?.ToString()} {right?.ToString()}";
+            return $"{left?.ToString()} {operStr?.ToString()} {right?.ToString()} ";
         }
     }
 }

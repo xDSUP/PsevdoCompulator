@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace lab1
 { 
-    class IdHashTable<T> where T : IHastable
+    public class IdHashTable<T> where T : IHastable
     {
         /// <summary>
         ///  стек, где будем хранить все элементы таблицы

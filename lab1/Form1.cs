@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using lab1.Syntax;
+using lab1.CodeGenerate;
 
 namespace lab1
 {
@@ -34,18 +35,9 @@ namespace lab1
                 item.Tag = id;
                 item.Text = 1.ToString();
                 item.SubItems.Add(id.Lexeme.Text);
+                item.SubItems.Add(id.Value.ToString());
                 Table.Items.Add(item);   
             }
-
-            //foreach(Lexeme lexeme in lexemes)
-            //{
-            //    ListViewItem item = new ListViewItem();
-            //    item.Tag = lexeme;
-            //    item.Text = newId++.ToString();
-            //    item.SubItems.Add(lexeme.Text);
-            //    item.SubItems.Add(lexeme.type.ToString());
-            //    Table.Items.Add(item);
-            //}
         }
 
         void updateTableLexeme(List<Lexeme> lexemes, List<Lexeme>ids)
@@ -84,19 +76,23 @@ namespace lab1
             {
                 ResultTextBox.Text = analizator.ToString();
                 this.analizator = analizator;
-                updateTables(analizator);
+                updateTableLexeme(analizator.tableLexemes, analizator.tableID);
             }
             syntacticAnalizator = new SyntacticAnalizator(analizator.tableLexemes);
             try
             {
                 syntacticAnalizator.work();
                 UpdateTreeView(syntacticAnalizator.listExpression);
+                MessageBox.Show("Построение завершено");
+                CodeGenerator codeGenerator = new CodeGenerator(syntacticAnalizator.listExpression, analizator.idHashTable);
+                codeGenerator.Generate();
+                updateTableId(analizator.idHashTable);
+                UpdateCodeView(codeGenerator.codeBlocks);
             }
             catch (lab1.Exceptions.SyntaxException exp)
             {
                 MessageBox.Show(exp.Message);
             }
-  
         }
         
         private void UpdateTreeView(List<Expression> expressions)
@@ -125,7 +121,7 @@ namespace lab1
             {
                 Expression exp = obj as Expression;
                 temp.Tag = exp;
-                temp.Text = exp.ToString();
+                temp.Text = exp.ToString() + exp.state;
                 temp.Nodes.Add(getTreeNode(exp.Left));
                 temp.Nodes.Add(getTreeNode(exp.Oper));
                 temp.Nodes.Add(getTreeNode(exp.Right));
@@ -143,7 +139,35 @@ namespace lab1
             return temp;
         }
 
+        private TreeNode getTreeNode(CodeBlock block)
+        {
+            TreeNode temp = new TreeNode();
+            foreach(var oper in block.operations)
+            {
+                temp.Tag = block;
+                temp.Text = block.expression.ToString();
+                temp.Nodes.Add(oper.ToString());
+            }
+
+            return temp;
+        }
+
         private void AnalizTextBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void UpdateCodeView(List<CodeBlock> codeBlocks)
+        {
+            treeView2.Nodes.Clear();
+            
+            foreach (var block in codeBlocks)
+            {
+                treeView2.Nodes.Add(getTreeNode(block));
+            }
+        }
+
+        private void treeView2_AfterSelect(object sender, TreeViewEventArgs e)
         {
 
         }

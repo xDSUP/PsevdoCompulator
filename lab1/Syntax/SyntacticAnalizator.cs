@@ -18,6 +18,7 @@ namespace lab1
     {
         // список лексем
         private List<Lexeme> lexemes;
+        private Stack<Expression> stackExpression;
         public List<Expression> listExpression;
         /// <summary>
         /// Тут будем хранить последовательность блоков из лексем
@@ -25,11 +26,13 @@ namespace lab1
         /// </summary>
 
         /// <summary>
-        /// счетчик скобочек: открывающие делают +1, закрывающие -1
+        /// фигурные счетчик скобочек: открывающие делают +1, закрывающие -1
+        /// круглые  счетчик скобочек: открывающие делают +2, закрывающие -2
         /// в конце разбора должен быть 0, а в процессе число не может быть отрицательным
         /// </summary>
         private int _limitersCounter = 0;
 
+        // TODO: дерево разбора которое правильно строит арифметику(с учетом порядка операций);
         public SyntacticAnalizator(List<Lexeme> lexemes)
         {
             this.lexemes = lexemes;
@@ -43,7 +46,7 @@ namespace lab1
             Stack<List<Expression>> listsExpressions = new Stack<List<Expression>>();
             listsExpressions.Push(listExpression); // самый главный лист всегда в стеке!!!
             // для хранения родителей при погружении в скобочки и if'ы
-            Stack<Expression> stackExpression = new Stack<Expression>(); 
+            stackExpression = new Stack<Expression>(); 
             // предыдущая лексема
             Lexeme tempLexeme;
             // хранит текущую ветку выражения
@@ -81,7 +84,6 @@ namespace lab1
                         throw new SyntaxException("Две константы рядом");
                     } 
                 }
-
                 if (currentLexeme.type == Lexeme.LexemType.LIMITERS)
                 {
                     switch (currentLexeme.Text)
@@ -243,6 +245,7 @@ namespace lab1
                     if (currentExpression.Oper is null)
                     {
                         currentExpression.Oper = currentLexeme;
+                        currentExpression.state = Expression.getStateOperator(currentLexeme);
                     }
                     else
                     {
@@ -250,6 +253,7 @@ namespace lab1
                         temp.Oper = currentLexeme;
                         currentExpression.Right = temp;
                         currentExpression = temp;
+                        currentExpression.state = Expression.getStateOperator(currentLexeme);
                     }
                 }
                 if (currentLexeme.type == Lexeme.LexemType.KEY_WORD)
@@ -309,6 +313,109 @@ namespace lab1
             {
                 throw new SyntaxException($"Есть незакрытые скобочки!");
             }
+            // в конце поправим деревце
+            reBuildTree();
+        }
+
+        /// <summary>
+        /// второй проход по дереву, чтобы проверить каждое отдельное выражение
+        /// перестраивает дерево разбора так, чтобы операции +-*/ выполнялись правильно
+        /// </summary>
+        private void reBuildTree()
+        {
+            foreach (var expression in listExpression)
+            {
+                // все выражения должны начинаться с := или быть ифом
+                if (expression.state == State.IFTHENELSE ||
+                    expression.state == State.IFTHEN) 
+                {
+                    // проверка условия ифа
+                    if (expression.Left is Expression)
+                    {
+                        if(((Expression)expression.Left).state == State.OPER_IF)
+                        {
+                            // TODO: добавить обработку нескольких условий когда-нибудь
+                        }
+                        else
+                        {
+                            throw new SyntaxException(" в ифе не условие!!! " + expression.Left);
+                        }
+                    }
+                    else if (expression.Left is Lexeme)
+                    {
+                        Lexeme exp = (Lexeme)expression.Left;
+                        if (!exp.isConst())
+                        {
+                            throw new SyntaxException(" в ифе не условие!!! " + expression.Left);
+                        }
+                    }
+                    else
+                    {
+                        throw new SyntaxException(" в ифе не условие!!! " + expression.Left);
+                    }
+
+                    // TODO: проверка других частей
+                }
+                else if(expression.state == State.OPER_LOAD)
+                {
+                    // только если справа выражение проверим его, иначе все оки у нас)
+                    if(expression.Right is Expression)
+                    {
+                        // пока что-то перестраивается
+                        while (reBuildExpression((Expression)expression.Right)) ;
+                    }
+                }
+                else
+                {
+                    throw new SyntaxException("Выражение должно начинаться с оператора ':=' " + expression);
+                }
+            }
+        }
+
+        // перестроим выражение, если это необходимо
+        // вернет true, если выражение перестроилось
+        private bool reBuildExpression(Expression exp)
+        {
+            bool f = false;
+            Expression rightExp = exp.Right as Expression;
+            Expression leftExp = exp.Left as Expression;
+            if (rightExp != null)
+            {
+                // если встретили умножение или деление
+                if (exp.state == State.OPER_DIV || exp.state == State.OPER_MPY)
+                {
+                    if (rightExp.state == State.OPER_MINUS || rightExp.state == State.OPER_PLUS)
+                    {
+                        // подвяжем выражение с умножением вниз слева
+                        Expression tempExp = new Expression(exp.Left, exp.Oper, rightExp.Left);
+                        tempExp.state = exp.state;
+                        exp.Left = tempExp;
+                        // поднимем операцию справа наверх
+                        exp.Oper = rightExp.Oper;
+                        exp.state = rightExp.state;
+                        exp.Right = rightExp.Right;
+                        f = true;
+                    }
+                }
+                f = f | reBuildExpression(rightExp);
+            }
+            if (leftExp != null)
+            {
+                if (leftExp.state == State.OPER_MINUS || leftExp.state == State.OPER_PLUS)
+                {
+                    // подвяжем выражение с умножением вниз c
+                    Expression tempExp = new Expression(leftExp.Right, exp.Oper, exp.Right);
+                    tempExp.state = exp.state;
+                    exp.Right = tempExp;
+                    // поднимем операцию справа наверх
+                    exp.Oper = leftExp.Oper;
+                    exp.state = leftExp.state;
+                    exp.Left = leftExp.Left;
+                    f = true;
+                }
+                f = f | reBuildExpression(leftExp);
+            }
+            return f;
         }
     }
 }

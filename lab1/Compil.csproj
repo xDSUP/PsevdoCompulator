@@ -48,6 +48,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeGenerate\CodeBlock.cs" />
+    <Compile Include="CodeGenerate\CodeGenerator.cs" />
+    <Compile Include="CodeGenerate\CodeOperations.cs" />
     <Compile Include="Exceptions\LimiterException.cs" />
     <Compile Include="Hashtable\HashTableNode.cs" />
     <Compile Include="Hashtable\IHastable.cs" />
@@ -64,6 +67,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Syntax\Block.cs" />
     <Compile Include="Syntax\Expression.cs" />
+    <Compile Include="Syntax\ExpressionRebuilder.cs" />
     <Compile Include="Syntax\SyntacticAnalizator.cs" />
     <Compile Include="Syntax\Tree.cs" />
     <EmbeddedResource Include="Form1.resx">

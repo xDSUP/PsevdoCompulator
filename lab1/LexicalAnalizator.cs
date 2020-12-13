@@ -21,8 +21,8 @@ namespace lab1
         public List<Lexeme> tableLexemes { get; } // таблица лексем(могут быть повторы)
         private string temp; // для грамо
 
-        static String operators = "=-+/*^<>";
-        static String limiters = "():;={}<>+- \n/*^";
+        static String operators = "=-+/*<>";
+        static String limiters = "():;={}<>+- \n/*";
         static String[] reservedWords = { "if", "then", "else" };
 
 
@@ -156,15 +156,19 @@ namespace lab1
                 {
                     tableID.Add(lexeme);
                 }
-                if (lexeme.type == Lexeme.LexemType.ID)
-                { 
-                    // TODO: обработка вложенности
-                    // если еще не был добавлен в таблицу, тогда добавим
-                    if(idHashTable.lookUp(lexeme) == null)
+                //if (lexeme.type == Lexeme.LexemType.ID)
+                //{ 
+                // TODO: обработка вложенности
+                // если еще не был добавлен в таблицу, тогда добавим
+                if (idHashTable.lookUp(lexeme) == null)
+                {
+                    idHashTable.insert(lexeme);
+                    if (lexeme.type != Lexeme.LexemType.ID)
                     {
-                        idHashTable.insert(lexeme);
+                        idHashTable.lookUp(lexeme).Value = Double.Parse(lexeme.Text);
                     }
-                }
+                }                    
+                //}
             }
             tableLexemes.Add(lexeme);
         }

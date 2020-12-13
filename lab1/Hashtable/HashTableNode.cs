@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 
 namespace lab1.Hashtable
 {
-    class HashTableNode<T> where T : IHastable
+    public class HashTableNode<T> where T : IHastable
     {
         private static int _newId = 0;
+        public double Value { get; set; }
         public T Lexeme { get; set; }
         public int Level { get; set; }
         public HashTableNode<T> id { get; set; }
@@ -24,7 +25,7 @@ namespace lab1.Hashtable
 
         public override string ToString()
         {
-            return Lexeme.ToString();
+            return Lexeme.ToString() + " " + Value;
         }
     }
 }
