@@ -50,6 +50,8 @@
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.treeView2 = new System.Windows.Forms.TreeView();
+            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.treeView3 = new System.Windows.Forms.TreeView();
             this.tabControl1.SuspendLayout();
             this.tabPageCode.SuspendLayout();
             this.tabPageId.SuspendLayout();
@@ -57,6 +59,10 @@
             this.flowLayoutPanel1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
+            this.splitContainer1.Panel1.SuspendLayout();
+            this.splitContainer1.Panel2.SuspendLayout();
+            this.splitContainer1.SuspendLayout();
             this.SuspendLayout();
             // 
             // AnalizTextBox
@@ -149,7 +155,7 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(488, 370);
+            this.tabControl1.Size = new System.Drawing.Size(728, 398);
             this.tabControl1.TabIndex = 5;
             // 
             // tabPageCode
@@ -249,11 +255,11 @@
             // 
             // tabPage2
             // 
-            this.tabPage2.Controls.Add(this.treeView2);
+            this.tabPage2.Controls.Add(this.splitContainer1);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(480, 344);
+            this.tabPage2.Size = new System.Drawing.Size(720, 372);
             this.tabPage2.TabIndex = 4;
             this.tabPage2.Text = "Ген КОд";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -261,17 +267,42 @@
             // treeView2
             // 
             this.treeView2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.treeView2.Location = new System.Drawing.Point(3, 3);
+            this.treeView2.Location = new System.Drawing.Point(0, 0);
             this.treeView2.Name = "treeView2";
-            this.treeView2.Size = new System.Drawing.Size(474, 338);
+            this.treeView2.Size = new System.Drawing.Size(351, 366);
             this.treeView2.TabIndex = 1;
             this.treeView2.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView2_AfterSelect);
+            // 
+            // splitContainer1
+            // 
+            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer1.Location = new System.Drawing.Point(3, 3);
+            this.splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            this.splitContainer1.Panel1.Controls.Add(this.treeView2);
+            // 
+            // splitContainer1.Panel2
+            // 
+            this.splitContainer1.Panel2.Controls.Add(this.treeView3);
+            this.splitContainer1.Size = new System.Drawing.Size(714, 366);
+            this.splitContainer1.SplitterDistance = 351;
+            this.splitContainer1.TabIndex = 2;
+            // 
+            // treeView3
+            // 
+            this.treeView3.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.treeView3.Location = new System.Drawing.Point(0, 0);
+            this.treeView3.Name = "treeView3";
+            this.treeView3.Size = new System.Drawing.Size(359, 366);
+            this.treeView3.TabIndex = 2;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(488, 370);
+            this.ClientSize = new System.Drawing.Size(728, 398);
             this.Controls.Add(this.tabControl1);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -284,6 +315,10 @@
             this.flowLayoutPanel1.PerformLayout();
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
+            this.splitContainer1.Panel1.ResumeLayout(false);
+            this.splitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
+            this.splitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -312,6 +347,8 @@
         private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.TreeView treeView2;
+        private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.TreeView treeView3;
     }
 }
 

@@ -20,7 +20,7 @@ namespace lab1.CodeGenerate
 
         public override string ToString()
         {
-            return $"{s} {l}";
+            return $"{s} {l?.ToString()}";
         }
     }
     // блок который генерируется для выражений
@@ -29,7 +29,7 @@ namespace lab1.CodeGenerate
         int _id = 0;
         public int Id { get => _id++; }
 
-        public string getNewId() => "$" + Id;
+        public string getNewId() => "VAR" + Id;
         // выражение, для которого генерируем код
         public Expression expression;
         /// <summary>
@@ -66,7 +66,7 @@ namespace lab1.CodeGenerate
             {
                 // загружаем и всегда кидаем в стек
                 l = (Lexeme)exp.Left;
-                currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, hashTable.lookUp(l).Value));
+                currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, l));
                 string t = getNewId();
                 currentOperations.Add(new CodeOperation(CodeOperationType.STORE, t));
                 // попробуем поддрживать нужные значения в таблице хеша
@@ -87,7 +87,7 @@ namespace lab1.CodeGenerate
             {
                 // загружаем и всегда кидаем в стек
                 l = (Lexeme)exp.Right;
-                currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, hashTable.lookUp(l).Value));
+                currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, l));
                 string t = getNewId();
                 currentOperations.Add(new CodeOperation(CodeOperationType.STORE, t));
 
@@ -103,7 +103,7 @@ namespace lab1.CodeGenerate
             var tempR = stack.Pop();
             var tempL = stack.Peek();
             // в сумматор кладем левую часть
-            currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, tempL));
+            currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, tempL.s));
             //stack.Push(tempR); // кидаем левую в стек, по ёё имени и сохраним результат
             // вынужденная мера, чтобы не переписывать хештаблицу(((
             var lexL = new Lexeme(tempL.s, Lexeme.LexemType.ID);
@@ -112,24 +112,24 @@ namespace lab1.CodeGenerate
             {
                 case State.OPER_MPY:
                     hashTable.lookUp(lexL).Value *= hashTable.lookUp(lexR).Value;
-                    currentOperations.Add(new CodeOperation(CodeOperationType.MPY, stack.Peek()));
+                    currentOperations.Add(new CodeOperation(CodeOperationType.MPY, lexR));
                     break;
                 case State.OPER_DIV:
                     hashTable.lookUp(lexL).Value /= hashTable.lookUp(lexR).Value;
-                    currentOperations.Add(new CodeOperation(CodeOperationType.DIV, stack.Peek()));
+                    currentOperations.Add(new CodeOperation(CodeOperationType.DIV, lexR));
                     break;
                 case State.OPER_MINUS:
                     hashTable.lookUp(lexL).Value -= hashTable.lookUp(lexR).Value;
-                    currentOperations.Add(new CodeOperation(CodeOperationType.SUB, stack.Peek()));
+                    currentOperations.Add(new CodeOperation(CodeOperationType.SUB, lexR));
                     break;
                 case State.OPER_PLUS:
                     hashTable.lookUp(lexL).Value += hashTable.lookUp(lexR).Value;
-                    currentOperations.Add(new CodeOperation(CodeOperationType.ADD, stack.Peek()));
+                    currentOperations.Add(new CodeOperation(CodeOperationType.ADD, lexR));
                     break;
                 case State.OPER_LOAD:
                     // выкинем из стека все)
                     stack.Pop();
-                    currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, tempR.l));
+                    currentOperations.Add(new CodeOperation(CodeOperationType.LOAD, lexR));
                     // сохраним рузельтат
                     currentOperations.Add(new CodeOperation(CodeOperationType.STORE, tempL.l));
                     // заносим значение в таблицу
@@ -138,7 +138,7 @@ namespace lab1.CodeGenerate
             }
             // закинем результат в переменную
             if(exp.state != State.OPER_LOAD)
-                currentOperations.Add(new CodeOperation(CodeOperationType.STORE, stack.Peek()));
+                currentOperations.Add(new CodeOperation(CodeOperationType.STORE, stack.Peek().s));
             return currentOperations;
         }
 
@@ -151,11 +151,12 @@ namespace lab1.CodeGenerate
             // отдельно обрабатываем код для ифов
             if (expression.state == State.IFTHEN)
             {
-                
+                operations = genByIfThen(expression);
+                operations.Add(new CodeOperation(CodeOperationType.POINT, stack.Pop().s));
             }
             else if (expression.state == State.IFTHENELSE)
             {
-
+                operations = genByIfThenElse(expression);
             }
             else
             {
@@ -163,6 +164,69 @@ namespace lab1.CodeGenerate
             }
 
 
+        }
+
+        private List<CodeOperation> genByIfThenElse(Expression expression)
+        {
+            var opers = genByIfThen(expression);
+            genByListExpr(expression.Right, opers);
+            opers.Add(new CodeOperation(CodeOperationType.POINT, stack.Pop().s));
+            return opers;
+        }
+
+        private List<CodeOperation> genByIfThen(Expression expression)
+        {
+            var opers = new List<CodeOperation>();
+            // сначала обработаем условие
+
+            var condition = expression.getLeftAsExpr();
+            opers.Add(new CodeOperation(CodeOperationType.LOAD, condition.Left));
+            var operatorCond = condition.Oper as Lexeme;
+            switch (operatorCond.Text)
+            {
+                case "=":
+                    opers.Add(new CodeOperation(CodeOperationType.EQUAL, condition.Right));
+                    break;
+                case "<":
+                    opers.Add(new CodeOperation(CodeOperationType.LT, condition.Right));
+                    break;
+                case ">":
+                    opers.Add(new CodeOperation(CodeOperationType.GT, condition.Right));
+                    break;
+            }
+            // метка
+            string point = ":pointEndThen" + getNewId();
+            //закинем в стек метку для 
+            //stack.Push(new tempId(null, point));
+            opers.Add(new CodeOperation(CodeOperationType.JZ, point));
+            // пишем код для then
+
+            genByListExpr(expression.Oper, opers);
+            string pointElse = ":pointEndElse" + getNewId();
+            //закинем в стек метку для елсе
+            stack.Push(new tempId(null, pointElse));
+            // переход за пределы елсе
+            opers.Add(new CodeOperation(CodeOperationType.JMP, pointElse));
+            opers.Add(new CodeOperation(CodeOperationType.POINT, point));
+            return opers;
+        }
+
+        // exp - либо лист либо 1 выражение
+        private void genByListExpr(object expression, List<CodeOperation> opers)
+        {
+            var exp = expression as Expression;
+            // если внутри несколько выражений 
+            if (exp.Oper is List<Expression>)
+            {
+                foreach (var expr in (List<Expression>)exp.Oper)
+                {
+                    opers.AddRange(genByExp(expr));
+                }
+            }
+            else // значит внутри только одно
+            {
+                opers.AddRange(genByExp((Expression)exp.Oper));
+            }
         }
     }
 }

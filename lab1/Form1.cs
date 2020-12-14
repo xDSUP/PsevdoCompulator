@@ -88,6 +88,9 @@ namespace lab1
                 codeGenerator.Generate();
                 updateTableId(analizator.idHashTable);
                 UpdateCodeView(codeGenerator.codeBlocks);
+                CodeOptimizator optimizator = new CodeOptimizator(codeGenerator.codeBlocks, analizator.idHashTable);
+                optimizator.Optimize();
+                UpdateCodeOptView(codeGenerator.codeBlocks);
             }
             catch (lab1.Exceptions.SyntaxException exp)
             {
@@ -164,6 +167,16 @@ namespace lab1
             foreach (var block in codeBlocks)
             {
                 treeView2.Nodes.Add(getTreeNode(block));
+            }
+        }
+
+        private void UpdateCodeOptView(List<CodeBlock> codeBlocks)
+        {
+            treeView3.Nodes.Clear();
+
+            foreach (var block in codeBlocks)
+            {
+                treeView3.Nodes.Add(getTreeNode(block));
             }
         }
 

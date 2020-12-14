@@ -33,6 +33,8 @@ namespace lab1.CodeGenerate
         /// </summary>
         STORE,
 
+
+        // все они ставят 1 в сумматор, если тру
         /// <summary>
         /// с(сумматор) = m → сумматор
         /// </summary>
@@ -46,10 +48,9 @@ namespace lab1.CodeGenerate
         /// </summary>
         LT,
 
-        //нужны ли аналоги для переменной?
-
+        //прыжок к метке, если такая есть иначе пропуск
         /// <summary>
-        /// прыжок к метке
+        /// прыжок к метке, если такая есть иначе пропуск
         /// </summary>
         JMP,
         /// <summary>
@@ -59,7 +60,11 @@ namespace lab1.CodeGenerate
         /// <summary>
         /// прыжок к метке, если в сумматоре 0
         /// </summary>
-        JZ
+        JZ,
+        /// <summary>
+        /// Метка :<имя метки>
+        /// </summary>
+        POINT
     }
 
     public class CodeOperation
@@ -71,12 +76,14 @@ namespace lab1.CodeGenerate
         /// <summary>
         /// параметр
         /// </summary>
-        public object Parametr { get; set; }
+        public string Parametr { get; set; }
+
+        public bool deleted { get; set; }
 
         public CodeOperation(CodeOperationType type, object parametr)
         {
             this.Type = type;
-            this.Parametr = parametr;
+            this.Parametr = parametr.ToString();
         }
 
         public override string ToString()

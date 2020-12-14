@@ -51,6 +51,7 @@
     <Compile Include="CodeGenerate\CodeBlock.cs" />
     <Compile Include="CodeGenerate\CodeGenerator.cs" />
     <Compile Include="CodeGenerate\CodeOperations.cs" />
+    <Compile Include="CodeGenerate\CodeOptimizator.cs" />
     <Compile Include="Exceptions\LimiterException.cs" />
     <Compile Include="Hashtable\HashTableNode.cs" />
     <Compile Include="Hashtable\IHastable.cs" />

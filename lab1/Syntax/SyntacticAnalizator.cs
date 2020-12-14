@@ -32,7 +32,7 @@ namespace lab1
         /// </summary>
         private int _limitersCounter = 0;
 
-        // TODO: дерево разбора которое правильно строит арифметику(с учетом порядка операций);
+        
         public SyntacticAnalizator(List<Lexeme> lexemes)
         {
             this.lexemes = lexemes;
@@ -382,9 +382,20 @@ namespace lab1
             if (rightExp != null)
             {
                 // если встретили умножение или деление
-                if (exp.state == State.OPER_DIV || exp.state == State.OPER_MPY)
+                // а также если справа оказался минс или плюс
+                // подсчет ведь идет слева направо, и чтобы минус левее вычислился раньше
+                // умножение и умножение за ним справа тоже меняем местами
+                // мы его опускаем вниз
+                //if (exp.state == State.OPER_DIV || exp.state == State.OPER_MPY)
                 {
-                    if (rightExp.state == State.OPER_MINUS || rightExp.state == State.OPER_PLUS)
+                    // if (rightExp.state == State.OPER_MINUS || rightExp.state == State.OPER_PLUS)
+                    if (
+                        (rightExp.state == State.OPER_MINUS || rightExp.state == State.OPER_PLUS) ||
+                        (   
+                            (rightExp.state == State.OPER_DIV || rightExp.state == State.OPER_MPY) &&
+                            (exp.state == State.OPER_DIV || exp.state == State.OPER_MPY)
+                        )  
+                        )
                     {
                         // подвяжем выражение с умножением вниз слева
                         Expression tempExp = new Expression(exp.Left, exp.Oper, rightExp.Left);
@@ -401,17 +412,20 @@ namespace lab1
             }
             if (leftExp != null)
             {
-                if (leftExp.state == State.OPER_MINUS || leftExp.state == State.OPER_PLUS)
+                if (exp.state == State.OPER_DIV || exp.state == State.OPER_MPY)
                 {
-                    // подвяжем выражение с умножением вниз c
-                    Expression tempExp = new Expression(leftExp.Right, exp.Oper, exp.Right);
-                    tempExp.state = exp.state;
-                    exp.Right = tempExp;
-                    // поднимем операцию справа наверх
-                    exp.Oper = leftExp.Oper;
-                    exp.state = leftExp.state;
-                    exp.Left = leftExp.Left;
-                    f = true;
+                    if (leftExp.state == State.OPER_MINUS || leftExp.state == State.OPER_PLUS)
+                    {
+                        // подвяжем выражение с умножением вниз c
+                        Expression tempExp = new Expression(leftExp.Right, exp.Oper, exp.Right);
+                        tempExp.state = exp.state;
+                        exp.Right = tempExp;
+                        // поднимем операцию справа наверх
+                        exp.Oper = leftExp.Oper;
+                        exp.state = leftExp.state;
+                        exp.Left = leftExp.Left;
+                        f = true;
+                    }
                 }
                 f = f | reBuildExpression(leftExp);
             }
